@@ -32,6 +32,9 @@ const useStyles = makeStyles({
     margin: "0 auto",
     width: "100%",
   },
+  userMessage: {
+    flexDirection: "row-reverse",
+  },
   messageContent: {
     flex: 1,
     padding: "12px",
@@ -80,7 +83,12 @@ export const ChatWindow = ({ messages, onSendMessage }: ChatWindowProps) => {
     <div className={styles.chatWindow}>
       <div className={styles.messages}>
         {messages.map((message) => (
-          <div key={message.id} className={styles.message}>
+          <div
+            key={message.id}
+            className={`${styles.message} ${
+              message.role === "user" ? styles.userMessage : ""
+            }`}
+          >
             <Avatar
               image={{
                 src:
@@ -104,7 +112,6 @@ export const ChatWindow = ({ messages, onSendMessage }: ChatWindowProps) => {
             onChange={(e, data) => setNewMessage(data.value)}
             onKeyPress={handleKeyPress}
             placeholder="Type your message..."
-            multiline
           />
           <Button
             appearance="primary"
