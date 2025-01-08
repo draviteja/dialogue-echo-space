@@ -2,8 +2,8 @@ import { makeStyles } from "@fluentui/react-components";
 import { useState } from "react";
 import { Sidebar } from "../components/Sidebar";
 import { ChatWindow } from "../components/ChatWindow";
-import { mockConversations } from "../data/mockData";
 import { Conversation, Message } from "../types/chat";
+import { useQuery } from "@tanstack/react-query";
 
 const useStyles = makeStyles({
   container: {
@@ -13,12 +13,39 @@ const useStyles = makeStyles({
   },
 });
 
+interface ApiConversation {
+  id: string;
+  conversationId: string;
+  userId: string | null;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const fetchConversations = async (): Promise<ApiConversation[]> => {
+  const response = await fetch("api/chats");
+  if (!response.ok) {
+    throw new Error("Failed to fetch conversations");
+  }
+  return response.json();
+};
+
 const Index = () => {
   const styles = useStyles();
-  const [conversations, setConversations] = useState(mockConversations);
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(
-    conversations[0]
-  );
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+
+  const { data: apiConversations, isLoading } = useQuery({
+    queryKey: ["conversations"],
+    queryFn: fetchConversations,
+  });
+
+  // Transform API conversations to match our Conversation type
+  const conversations: Conversation[] = apiConversations?.map((conv) => ({
+    id: conv.conversationId,
+    title: conv.title,
+    messages: [],
+    timestamp: new Date(conv.createdAt),
+  })) || [];
 
   const handleNewChat = () => {
     const newConversation: Conversation = {
@@ -27,7 +54,6 @@ const Index = () => {
       messages: [],
       timestamp: new Date(),
     };
-    setConversations([newConversation, ...conversations]);
     setSelectedConversation(newConversation);
   };
 
@@ -53,11 +79,6 @@ const Index = () => {
       messages: [...selectedConversation.messages, newMessage, mockResponse],
     };
 
-    setConversations(
-      conversations.map((conv) =>
-        conv.id === selectedConversation.id ? updatedConversation : conv
-      )
-    );
     setSelectedConversation(updatedConversation);
   };
 
